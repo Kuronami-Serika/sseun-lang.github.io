@@ -59,14 +59,15 @@ permalink: /interpreter/
     #inputs { min-height: 76px; }
     details { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
     summary { cursor: pointer; color: var(--accent); font-weight: 700; }
-    dl { display: grid; grid-template-columns: max-content 1fr; gap: 8px 16px; line-height: 1.6; }
-    dd { margin: 0; color: var(--muted); }
+    .guide table { width: 100%; margin-top: 12px; border-collapse: collapse; text-align: left; }
+    .guide th, .guide td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .guide thead th { color: var(--text); background: var(--panel); }
+    .guide tbody th { width: 32%; font-weight: 500; overflow-wrap: anywhere; }
+    .guide td { color: var(--muted); }
     @media (max-width: 720px) {
       .workspace { grid-template-columns: minmax(0, 1fr); }
       #source { height: 295px; }
       #output { height: 190px; }
-      dl { grid-template-columns: 1fr; gap: 4px; }
-      dd { margin-bottom: 8px; }
     }
   </style>
 </head>
@@ -97,18 +98,28 @@ permalink: /interpreter/
       <div class="bar"><label for="inputs">입력값</label><span class="hint" id="input-hint">입력 명령을 만나면 위에서부터 한 줄씩 읽어요.</span></div>
       <textarea id="inputs" rows="2" aria-describedby="input-hint" placeholder="예: 7"></textarea>
     </section>
-    <details>
-      <summary>문법 도움말</summary>
-      <dl>
-        <dt><code>레전드 시</code> / <code>아무 맛도 안난다</code></dt><dd>프로그램의 시작과 끝. 줄바꿈 또는 <code>~</code>로 명령을 구분해요.</dd>
-        <dt><code>쓴...</code> / <code>쓴쓴,</code></dt><dd>3을 저장하거나 값을 1 줄여요. <code>쓰은</code>, <code>쓰으은</code>도 변수예요.</dd>
-        <dt><code>.</code> / <code>,</code> / 공백 / <code>/</code></dt><dd>1 더하기, 1 빼기, 곱하기, 정수 몫.</dd>
-        <dt><code>쓴단?</code> / <code>단쓴!</code></dt><dd>정수 입력과 숫자 출력.</dd>
-        <dt><code>단"안녕!"!</code> / <code>단쓴ㅋ</code> / <code>단ㅋ</code></dt><dd>문자열, 유니코드 문자, 줄바꿈을 출력해요.</dd>
-        <dt><code>사랑쓴?됬....</code></dt><dd>쓴이 0이면 4번째 줄로 이동해요.</dd>
-        <dt><code>화요알쓴</code> / <code>화요알끝</code></dt><dd>쓴에 저장된 횟수만큼 블록을 반복해요.</dd>
-        <dt><code>심박수!..</code></dt><dd>프로그램을 끝내고 종료 값 2를 반환해요.</dd>
-      </dl>
+    <details class="guide" open>
+      <summary>쓴랭 문법표</summary>
+      <table>
+        <thead><tr><th scope="col">문법</th><th scope="col">뜻</th></tr></thead>
+        <tbody>
+          <tr><th scope="row"><code>레전드 시</code></th><td>프로그램 시작. 첫 줄에 써요.</td></tr>
+          <tr><th scope="row"><code>아무 맛도 안난다</code></th><td>프로그램 끝. 마지막 줄에 써요.</td></tr>
+          <tr><th scope="row">줄바꿈 · <code>~</code></th><td>명령을 한 줄씩 나눠요. 한 줄로 쓸 때는 <code>~</code>를 넣어요.</td></tr>
+          <tr><th scope="row"><code>.</code> · <code>,</code></th><td>점은 +1, 쉼표는 −1. <code>..,,,</code>는 −1이에요.</td></tr>
+          <tr><th scope="row">공백 · <code>/</code></th><td>공백은 곱하기, <code>/</code>는 나눈 뒤 내림. 섞이면 왼쪽부터 계산해요.</td></tr>
+          <tr><th scope="row"><code>쓴...</code></th><td><code>쓴</code>에 3을 저장해요. <code>쓰은</code>, <code>쓰으은</code>에도 같은 방식으로 저장해요.</td></tr>
+          <tr><th scope="row"><code>쓴쓴,</code></th><td><code>쓴</code>의 값을 1 줄여요. 1 늘리려면 <code>쓴쓴.</code>을 써요.</td></tr>
+          <tr><th scope="row"><code>쓴단?</code></th><td>입력값 칸에서 정수 한 줄을 읽어 <code>쓴</code>에 저장해요.</td></tr>
+          <tr><th scope="row"><code>단쓴!</code></th><td><code>쓴</code>에 저장한 숫자를 출력해요. <code>단...!</code>는 3을 출력해요.</td></tr>
+          <tr><th scope="row"><code>단"안녕!"!</code></th><td>따옴표 안의 글을 출력해요.</td></tr>
+          <tr><th scope="row"><code>단쓴ㅋ</code> · <code>단ㅋ</code></th><td><code>단쓴ㅋ</code>는 숫자에 해당하는 글자를 출력해요. <code>단ㅋ</code>는 줄을 바꿔요.</td></tr>
+          <tr><th scope="row"><code>사랑쓴?단...!</code></th><td><code>쓴</code>이 0일 때만 물음표 뒤의 명령을 실행해요.</td></tr>
+          <tr><th scope="row"><code>됬....</code></th><td>4번째 줄로 이동해요. 시작 줄과 빈 줄도 세요.</td></tr>
+          <tr><th scope="row"><code>화요알...</code> · <code>화요알끝</code></th><td>두 줄 사이를 3번 반복해요. <code>화요알쓴</code>은 <code>쓴</code>의 값만큼 반복해요.</td></tr>
+          <tr><th scope="row"><code>심박수!..</code></th><td>프로그램 전체를 끝내고 종료 값 2를 반환해요.</td></tr>
+        </tbody>
+      </table>
     </details>
   </main>
   <script>
