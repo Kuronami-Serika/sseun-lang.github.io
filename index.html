@@ -62,10 +62,27 @@
       border-radius: 0 0 11px 11px;
     }
     textarea { resize: vertical; tab-size: 4; }
+    .code-editor { display: grid; grid-template-columns: auto minmax(0, 1fr); }
+    .line-gutter {
+      position: relative; overflow: hidden; width: clamp(3rem, 11vw, 5.5rem);
+      border-top: 1px solid var(--border); border-right: 1px solid var(--border);
+      border-radius: 0 0 0 11px; background: var(--surface);
+    }
+    #line-numbers {
+      position: absolute; inset: 0 0 auto;
+      border: 0; padding: 16px 8px; text-align: right; color: var(--muted);
+      font-variant-numeric: tabular-nums; user-select: none;
+    }
+    #source { border-bottom-left-radius: 0; }
     #source, #output { height: 370px; }
     #output { overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
     #input-panel { margin-top: 12px; }
     #inputs { min-height: 76px; }
+    #live-input { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px 16px; }
+    #live-input[hidden] { display: none; }
+    #input-value { min-width: 0; flex: 1 1 120px; padding: 8px; border: 1px solid var(--border); border-radius: 8px; font: inherit; }
+    #input-error { flex-basis: 100%; color: var(--error); }
+    #input-error:empty { display: none; }
     details { margin-top: 22px; border-top: 1px solid var(--border); padding-top: 14px; }
     summary { cursor: pointer; color: var(--accent); font-weight: 700; }
     .guide table { width: 100%; margin-top: 12px; border-collapse: collapse; text-align: left; }
@@ -116,7 +133,10 @@
           <input id="source-file" type="file" accept=".sseun" hidden>
           <span id="file-status" class="file-status" role="status"></span>
         </div>
-        <textarea id="source" spellcheck="false" wrap="off"></textarea>
+        <div class="code-editor">
+          <div class="line-gutter" aria-hidden="true"><pre id="line-numbers"></pre></div>
+          <textarea id="source" spellcheck="false" wrap="off"></textarea>
+        </div>
       </section>
       <section class="panel" aria-labelledby="output-heading">
         <div class="bar"><h2 id="output-heading">출력</h2><span id="status" role="status">실행 대기</span></div>
@@ -124,8 +144,14 @@
       </section>
     </div>
     <section class="panel" id="input-panel">
-      <div class="bar"><label for="inputs">입력값</label><span class="hint" id="input-hint">입력 명령을 만나면 위에서부터 한 줄씩 읽어요.</span></div>
+      <div class="bar"><label for="inputs">미리 입력할 값</label><span class="hint" id="input-hint">선택 사항이에요. 비워 두면 실행 중에 입력할 수 있어요.</span></div>
       <textarea id="inputs" rows="2" aria-describedby="input-hint" placeholder="예: 7"></textarea>
+      <form id="live-input" hidden>
+        <label for="input-value">정수를 입력해 주세요</label>
+        <input id="input-value" type="text" autocomplete="off" aria-describedby="input-error">
+        <button type="submit">입력</button>
+        <span id="input-error" role="status"></span>
+      </form>
     </section>
     <details class="guide" open>
       <summary>쓴랭 문법표</summary>
@@ -139,12 +165,12 @@
           <tr><th scope="row">공백 · <code>/</code></th><td>공백은 곱하기, <code>/</code>는 나눈 뒤 내림. 섞이면 왼쪽부터 계산해요.</td></tr>
           <tr><th scope="row"><code>쓴...</code></th><td><code>쓴</code>에 3을 저장해요. <code>쓰은</code>, <code>쓰으은</code>에도 같은 방식으로 저장해요.</td></tr>
           <tr><th scope="row"><code>쓴쓴,</code></th><td><code>쓴</code>의 값을 1 줄여요. 1 늘리려면 <code>쓴쓴.</code>을 써요.</td></tr>
-          <tr><th scope="row"><code>쓴단?</code></th><td>입력값 칸에서 정수 한 줄을 읽어 <code>쓴</code>에 저장해요.</td></tr>
+          <tr><th scope="row"><code>쓴단?</code></th><td>정수 하나를 <code>쓴</code>에 저장해요. 미리 적은 값이 없으면 입력할 때까지 기다려요.</td></tr>
           <tr><th scope="row"><code>단쓴!</code></th><td><code>쓴</code>에 저장한 숫자를 출력해요. <code>단...!</code>는 3을 출력해요.</td></tr>
           <tr><th scope="row"><code>단"안녕!"!</code></th><td>따옴표 안의 글을 출력해요.</td></tr>
           <tr><th scope="row"><code>단쓴ㅋ</code> · <code>단ㅋ</code></th><td><code>단쓴ㅋ</code>는 숫자에 해당하는 글자를 출력해요. <code>단ㅋ</code>는 줄을 바꿔요.</td></tr>
           <tr><th scope="row"><code>사랑쓴?단...!</code></th><td><code>쓴</code>이 0일 때만 물음표 뒤의 명령을 실행해요.</td></tr>
-          <tr><th scope="row"><code>됬....</code></th><td>4번째 줄로 이동해요. 시작 줄과 빈 줄도 세요.</td></tr>
+          <tr><th scope="row"><code>됬....</code></th><td>왼쪽에 표시된 4번째 줄로 이동해요. 한 줄에 <code>~</code>로 명령을 여러 개 쓰면 번호 범위가 표시돼요.</td></tr>
           <tr><th scope="row"><code>화요알...</code> · <code>화요알끝</code></th><td>두 줄 사이를 3번 반복해요. <code>화요알쓴</code>은 <code>쓴</code>의 값만큼 반복해요.</td></tr>
           <tr><th scope="row"><code>심박수!..</code></th><td>프로그램 전체를 끝내고 종료 값 2를 반환해요.</td></tr>
         </tbody>
@@ -310,7 +336,7 @@
           const text = command.match(/^단"([^"]*)"!$/u);
           if (assignment) {
             const [, name, expression] = assignment;
-            variables.set(name, expression === "단?" ? read() : number(expression));
+            variables.set(name, expression === "단?" ? await read() : number(expression));
           } else if (text) {
             print(text[1]);
           } else if (command.startsWith("단") && command.endsWith("!")) {
@@ -332,7 +358,11 @@
     }
 
     const source = document.querySelector("#source");
+    const lineNumbers = document.querySelector("#line-numbers");
     const inputs = document.querySelector("#inputs");
+    const inputForm = document.querySelector("#live-input");
+    const inputValue = document.querySelector("#input-value");
+    const inputError = document.querySelector("#input-error");
     const output = document.querySelector("#output");
     const status = document.querySelector("#status");
     const runButton = document.querySelector("#run");
@@ -347,13 +377,35 @@
     let loadedCode = examples.print.code;
     let loadedInputs = "";
     let filename = "program.sseun";
+    function syncLineScroll() {
+      lineNumbers.style.transform = `translateY(${-source.scrollTop}px)`;
+    }
+    function updateLineNumbers() {
+      const text = source.value;
+      const trimmed = text.trim();
+      const leadingLines = trimmed ? text.slice(0, text.length - text.trimStart().length).split("\n").length - 1 : 0;
+      const programRows = trimmed.split(/\r?\n/);
+      let nextLine = 1;
+      lineNumbers.textContent = text.split(/\r?\n/).map((_, index) => {
+        const row = programRows[index - leadingLines];
+        if (row === undefined) return "–";
+        const first = nextLine;
+        nextLine += row.split("~").length;
+        return nextLine === first + 1 ? String(first) : `${first}–${nextLine - 1}`;
+      }).join("\n");
+      syncLineScroll();
+    }
 
     source.value = loadedCode;
+    updateLineNumbers();
+    source.addEventListener("input", updateLineNumbers);
+    source.addEventListener("scroll", syncLineScroll);
     exampleButton.addEventListener("click", () => {
       const edited = source.value !== loadedCode || inputs.value !== loadedInputs;
       if (edited && !confirm("현재 코드와 입력값을 예제로 바꿀까요?")) return;
       const example = examples[exampleChoice.value];
       source.value = loadedCode = example.code;
+      updateLineNumbers();
       inputs.value = loadedInputs = example.inputs ?? "";
       filename = "program.sseun";
       fileStatus.textContent = "";
@@ -376,6 +428,7 @@
         }
         if (source.value !== loadedCode && !confirm("편집 중인 코드를 파일 내용으로 바꿀까요?")) return;
         source.value = text;
+        updateLineNumbers();
         loadedCode = source.value;
         filename = file.name;
         fileStatus.textContent = `${filename} 열었어요.`;
@@ -397,6 +450,49 @@
       fileStatus.textContent = `${filename} 다운로드를 요청했어요.`;
     });
 
+    function parseInput(text) {
+      const input = text.trim();
+      if (!/^[+-]?[0-9](?:_?[0-9])*$/u.test(input)) throw new Error("입력값은 정수여야 해요.");
+      return BigInt(input.replaceAll("_", ""));
+    }
+    function waitForInput(signal) {
+      return new Promise((resolve, reject) => {
+        function close() {
+          inputForm.hidden = true;
+          inputForm.removeEventListener("submit", submit);
+          signal.removeEventListener("abort", cancel);
+        }
+        function cancel() {
+          close();
+          reject(new Error("실행을 중지했어요."));
+        }
+        function submit(event) {
+          event.preventDefault();
+          let value;
+          try {
+            value = parseInput(inputValue.value);
+          } catch (error) {
+            inputError.textContent = error.message;
+            inputValue.focus();
+            return;
+          }
+          close();
+          status.textContent = "실행 중";
+          resolve(value);
+        }
+        if (signal.aborted) {
+          cancel();
+          return;
+        }
+        inputValue.value = "";
+        inputError.textContent = "";
+        inputForm.hidden = false;
+        status.textContent = "입력 대기 중";
+        inputForm.addEventListener("submit", submit);
+        signal.addEventListener("abort", cancel);
+        inputValue.focus();
+      });
+    }
     async function execute() {
       if (controller) return;
       controller = new AbortController();
@@ -405,7 +501,8 @@
       status.classList.remove("error");
       status.textContent = "실행 중";
       output.textContent = "";
-      const inputLines = inputs.value ? inputs.value.split(/\r?\n/) : [];
+      const prepared = inputs.value.trimEnd();
+      const inputLines = prepared ? prepared.split(/\r?\n/) : [];
       let inputIndex = 0;
       let printed = "";
 
@@ -413,12 +510,9 @@
         const exitCode = await runSseun(source.value, {
           signal: controller.signal,
           read() {
-            if (inputIndex >= inputLines.length) {
-              throw new Error("입력값이 부족해요. 입력값 칸에 정수를 한 줄씩 적어 주세요.");
-            }
-            const input = inputLines[inputIndex++].trim();
-            if (!/^[+-]?[0-9](?:_?[0-9])*$/u.test(input)) throw new Error("입력값은 정수여야 해요.");
-            return BigInt(input.replaceAll("_", ""));
+            if (inputIndex < inputLines.length) return parseInput(inputLines[inputIndex++]);
+            output.textContent = printed;
+            return waitForInput(controller.signal);
           },
           write(text) { printed += text; }
         });
