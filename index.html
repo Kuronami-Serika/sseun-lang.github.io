@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="브라우저에서 쓴랭 코드를 작성하고 실행하세요.">
   <title>쓴랭 인터프리터</title>
-  <link rel="icon" type="image/png" href="./sseun-logo.png">
+  <link rel="icon" href="./sseun-pagetti.webp">
   <style>
     :root {
       color-scheme: dark;
@@ -101,7 +101,7 @@
   <main>
     <header>
       <div class="brand">
-        <img class="brand-logo" src="./sseun-logo.png" alt="쓴파게티" width="1254" height="1254">
+        <img class="brand-logo" src="./sseun-pagetti.webp" alt="쓴파게티" width="434" height="434">
         <div>
           <h1><span>쓴랭</span> 인터프리터</h1>
           <p>코드를 작성하고 브라우저에서 실행하세요.</p>
@@ -178,6 +178,35 @@
     </details>
   </main>
   <script>
+    const brandLogo = document.querySelector(".brand-logo");
+    const favicon = document.querySelector('link[rel="icon"]');
+    const logoBase = brandLogo.src;
+    const logos = [
+      { file: "sseun-hwasal.png", alt: "화살 쓴발면" },
+      { file: "sseun-gae-jang.png", alt: "쓴개장" },
+      { file: "sseun-pagetti.webp", alt: "쓴파게티" }
+    ];
+    const logoStorageKey = "sseun.lastLogo";
+    let currentLogo;
+    try {
+      currentLogo = sessionStorage.getItem(logoStorageKey);
+    } catch {
+      // 저장소를 쓸 수 없어도 이번 페이지에서는 아이콘을 바꿔요.
+    }
+    function changeLogo() {
+      const choices = logos.filter(logo => logo.file !== currentLogo);
+      const selected = choices[Math.floor(Math.random() * choices.length)];
+      const url = new URL(selected.file, logoBase).href;
+      currentLogo = selected.file;
+      brandLogo.src = favicon.href = url;
+      brandLogo.alt = selected.alt;
+      try {
+        sessionStorage.setItem(logoStorageKey, currentLogo);
+      } catch {
+        // 저장소를 쓸 수 없을 때는 현재 페이지에서만 선택을 기억해요.
+      }
+    }
+    changeLogo();
     const examples = {
       blank: { code: "레전드 시\n\n아무 맛도 안난다" },
       print: { code: `레전드 시
@@ -523,6 +552,7 @@
         } else {
           status.classList.add("error");
           status.textContent = "실행 오류";
+          changeLogo();
           if (printed && !printed.endsWith("\n")) printed += "\n";
           printed += error.message;
         }
