@@ -9,6 +9,7 @@ permalink: /interpreter/
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="description" content="브라우저에서 쓴랭 코드를 작성하고 실행하세요.">
   <title>쓴랭 인터프리터</title>
+  <link rel="icon" type="image/png" href="../sseun-logo.png">
   <style>
     :root {
       color-scheme: dark;
@@ -28,6 +29,8 @@ permalink: /interpreter/
     header { display: flex; align-items: end; justify-content: space-between; gap: 20px; flex-wrap: wrap; margin-bottom: 26px; }
     h1 { margin: 0; font-size: clamp(2.25rem, 6vw, 4.4rem); letter-spacing: -.07em; line-height: 1.05; }
     h1 span { color: var(--accent); }
+    .brand { display: flex; align-items: center; gap: clamp(12px, 2vw, 20px); }
+    .brand-logo { display: block; width: clamp(64px, 10vw, 104px); height: auto; border-radius: 12px; flex-shrink: 0; }
     header p, .hint { color: var(--muted); }
     header p { margin: 14px 0 0; }
     .actions { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -84,9 +87,12 @@ permalink: /interpreter/
 <body>
   <main>
     <header>
-      <div>
-        <h1><span>쓴랭</span> 인터프리터</h1>
-        <p>코드를 작성하고 브라우저에서 실행하세요.</p>
+      <div class="brand">
+        <img class="brand-logo" src="../sseun-logo.png" alt="쓴파게티" width="1254" height="1254">
+        <div>
+          <h1><span>쓴랭</span> 인터프리터</h1>
+          <p>코드를 작성하고 브라우저에서 실행하세요.</p>
+        </div>
       </div>
       <div class="actions">
         <select id="example-choice" aria-label="예제 선택">
