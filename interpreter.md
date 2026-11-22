@@ -31,9 +31,16 @@ permalink: /interpreter/
     header p, .hint { color: var(--muted); }
     header p { margin: 14px 0 0; }
     .actions { display: flex; flex-wrap: wrap; gap: 8px; }
-    button {
+    button, select {
       border: 1px solid var(--border); border-radius: 8px; padding: 10px 16px;
       font: inherit; font-weight: 700; background: var(--panel); color: var(--text); cursor: pointer;
+    }
+    select {
+      appearance: none; padding-right: 32px;
+      background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+        linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+      background-position: right 17px center, right 12px center;
+      background-size: 5px 5px; background-repeat: no-repeat;
     }
     button:hover:not(:disabled) { border-color: var(--accent); }
     button:disabled { opacity: .45; cursor: default; }
@@ -79,6 +86,13 @@ permalink: /interpreter/
         <p>코드를 작성하고 브라우저에서 실행하세요.</p>
       </div>
       <div class="actions">
+        <select id="example-choice" aria-label="예제 선택">
+          <option value="print">숫자와 글 출력</option>
+          <option value="input">입력과 계산</option>
+          <option value="condition">0인지 확인하기</option>
+          <option value="repeat">세 번 반복하기</option>
+          <option value="jump">반복문 중간에 나오기</option>
+        </select>
         <button id="example" type="button">예제 불러오기</button>
         <button id="stop" type="button" disabled>중지</button>
         <button id="run" type="button">실행</button>
@@ -123,7 +137,35 @@ permalink: /interpreter/
     </details>
   </main>
   <script>
-    const example = `레전드 시
+    const examples = {
+      print: { code: `레전드 시
+단"안녕, 쓴랭!"!
+단ㅋ
+단...!
+단ㅋ
+아무 맛도 안난다` },
+      input: { inputs: "7\n3", code: `레전드 시
+쓴단?
+쓰은단?
+단"두 수의 곱은 "!
+단쓴 쓰은!
+단ㅋ
+아무 맛도 안난다` },
+      condition: { inputs: "0", code: `레전드 시
+쓴단?
+사랑쓴?단"0이에요!"!
+사랑쓴?단ㅋ
+사랑쓴?심박수!
+단"0이 아니에요!"!
+단ㅋ
+아무 맛도 안난다` },
+      repeat: { code: `레전드 시
+화요알...
+단"안녕!"!
+단ㅋ
+화요알끝
+아무 맛도 안난다` },
+      jump: { code: `레전드 시
 쓴...
 화요알.....
 쓴쓴,
@@ -133,7 +175,8 @@ permalink: /interpreter/
 화요알끝
 단"반복문 밖이에요!"!
 단ㅋ
-아무 맛도 안난다`;
+아무 맛도 안난다` }
+    };
     async function runSseun(source, { read, write, signal }) {
       const lines = source.trim().split(/\r?\n|~/);
       if (lines[0] !== "레전드 시" || lines.at(-1) !== "아무 맛도 안난다") {
@@ -266,17 +309,22 @@ permalink: /interpreter/
     const runButton = document.querySelector("#run");
     const stopButton = document.querySelector("#stop");
     const exampleButton = document.querySelector("#example");
+    const exampleChoice = document.querySelector("#example-choice");
     let controller;
-    source.value = example;
+    let loadedExample = examples.print;
+    source.value = loadedExample.code;
     exampleButton.addEventListener("click", () => {
-      if (source.value !== example && !confirm("현재 코드를 예제로 바꿀까요?")) return;
-      source.value = example;
+      const edited = source.value !== loadedExample.code || inputs.value !== (loadedExample.inputs ?? "");
+      if (edited && !confirm("현재 코드와 입력값을 예제로 바꿀까요?")) return;
+      loadedExample = examples[exampleChoice.value];
+      source.value = loadedExample.code;
+      inputs.value = loadedExample.inputs ?? "";
       source.focus();
     });
     async function execute() {
       if (controller) return;
       controller = new AbortController();
-      runButton.disabled = exampleButton.disabled = true;
+      runButton.disabled = exampleButton.disabled = exampleChoice.disabled = true;
       stopButton.disabled = false;
       status.classList.remove("error");
       status.textContent = "실행 중";
@@ -310,7 +358,7 @@ permalink: /interpreter/
       } finally {
         output.textContent = printed;
         controller = undefined;
-        runButton.disabled = exampleButton.disabled = false;
+        runButton.disabled = exampleButton.disabled = exampleChoice.disabled = false;
         stopButton.disabled = true;
       }
     }
