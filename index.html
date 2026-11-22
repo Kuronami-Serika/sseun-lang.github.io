@@ -46,6 +46,9 @@
     .panel { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--panel); }
     .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 12px 16px; }
     .bar h2, .bar label { margin: 0; font-size: .95rem; font-weight: 700; }
+    .file-actions button { padding: 5px 9px; font-size: .875rem; }
+    .file-status { flex-basis: 100%; color: var(--muted); font-size: .875rem; overflow-wrap: anywhere; }
+    .file-status:empty { display: none; }
     .hint, #status { font-size: .875rem; }
     #status { color: var(--accent); }
     #status.error { color: var(--error); }
@@ -84,6 +87,7 @@
       <div class="actions">
         <select id="example-choice" aria-label="예제 선택">
           <option value="print">숫자와 글 출력</option>
+          <option value="blank">빈 프로그램</option>
           <option value="input">입력과 계산</option>
           <option value="condition">0인지 확인하기</option>
           <option value="repeat">세 번 반복하기</option>
@@ -96,7 +100,16 @@
     </header>
     <div class="workspace">
       <section class="panel">
-        <div class="bar"><label for="source">쓴랭 코드</label><span class="hint">Ctrl / ⌘ + Enter 실행</span></div>
+        <div class="bar">
+          <label for="source">쓴랭 코드</label>
+          <span class="hint">Ctrl / ⌘ + Enter 실행</span>
+          <div class="actions file-actions">
+            <button id="open-file" type="button">파일 열기</button>
+            <button id="save-file" type="button">.sseun 저장</button>
+          </div>
+          <input id="source-file" type="file" accept=".sseun" hidden>
+          <span id="file-status" class="file-status" role="status"></span>
+        </div>
         <textarea id="source" spellcheck="false" wrap="off"></textarea>
       </section>
       <section class="panel" aria-labelledby="output-heading">
@@ -134,6 +147,7 @@
   </main>
   <script>
     const examples = {
+      blank: { code: "레전드 시\n\n아무 맛도 안난다" },
       print: { code: `레전드 시
 단"안녕, 쓴랭!"!
 단ㅋ
@@ -319,23 +333,68 @@
     const stopButton = document.querySelector("#stop");
     const exampleButton = document.querySelector("#example");
     const exampleChoice = document.querySelector("#example-choice");
+    const openButton = document.querySelector("#open-file");
+    const saveButton = document.querySelector("#save-file");
+    const filePicker = document.querySelector("#source-file");
+    const fileStatus = document.querySelector("#file-status");
     let controller;
-    let loadedExample = examples.print;
+    let loadedCode = examples.print.code;
+    let loadedInputs = "";
+    let filename = "program.sseun";
 
-    source.value = loadedExample.code;
+    source.value = loadedCode;
     exampleButton.addEventListener("click", () => {
-      const edited = source.value !== loadedExample.code || inputs.value !== (loadedExample.inputs ?? "");
+      const edited = source.value !== loadedCode || inputs.value !== loadedInputs;
       if (edited && !confirm("현재 코드와 입력값을 예제로 바꿀까요?")) return;
-      loadedExample = examples[exampleChoice.value];
-      source.value = loadedExample.code;
-      inputs.value = loadedExample.inputs ?? "";
+      const example = examples[exampleChoice.value];
+      source.value = loadedCode = example.code;
+      inputs.value = loadedInputs = example.inputs ?? "";
+      filename = "program.sseun";
+      fileStatus.textContent = "";
       source.focus();
+    });
+    openButton.addEventListener("click", () => filePicker.click());
+    filePicker.addEventListener("change", async () => {
+      const file = filePicker.files[0];
+      filePicker.value = "";
+      if (!file) return;
+      if (!file.name.toLowerCase().endsWith(".sseun")) {
+        fileStatus.textContent = ".sseun 파일을 선택해 주세요.";
+        return;
+      }
+      try {
+        const text = await file.text();
+        if (controller) {
+          fileStatus.textContent = "실행을 마친 뒤 파일을 다시 열어 주세요.";
+          return;
+        }
+        if (source.value !== loadedCode && !confirm("편집 중인 코드를 파일 내용으로 바꿀까요?")) return;
+        source.value = text;
+        loadedCode = source.value;
+        filename = file.name;
+        fileStatus.textContent = `${filename} 열었어요.`;
+        source.focus();
+      } catch {
+        fileStatus.textContent = "파일을 읽을 수 없어요.";
+      }
+    });
+    saveButton.addEventListener("click", () => {
+      const file = new Blob([source.value], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(file);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.append(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      fileStatus.textContent = `${filename} 다운로드를 요청했어요.`;
     });
 
     async function execute() {
       if (controller) return;
       controller = new AbortController();
-      runButton.disabled = exampleButton.disabled = exampleChoice.disabled = true;
+      runButton.disabled = exampleButton.disabled = exampleChoice.disabled = openButton.disabled = true;
       stopButton.disabled = false;
       status.classList.remove("error");
       status.textContent = "실행 중";
@@ -370,7 +429,7 @@
       } finally {
         output.textContent = printed;
         controller = undefined;
-        runButton.disabled = exampleButton.disabled = exampleChoice.disabled = false;
+        runButton.disabled = exampleButton.disabled = exampleChoice.disabled = openButton.disabled = false;
         stopButton.disabled = true;
       }
     }
